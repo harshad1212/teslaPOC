@@ -7,7 +7,7 @@ import { VehicleCard } from './components/VehicleCard';
 import { VehicleDetail } from './components/VehicleDetail';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { ApiConfigModal } from './components/ApiConfigModal';
-import { Car, AlertCircle, CheckCircle, Server } from 'lucide-react';
+import { Car, AlertCircle, CheckCircle, Server, ShieldCheck } from 'lucide-react';
 import './styles/index.css';
 
 export const App: React.FC = () => {
@@ -27,6 +27,7 @@ export const App: React.FC = () => {
 
   // API Config modal state
   const [apiConfigOpen, setApiConfigOpen] = useState<boolean>(false);
+  const [registeringPartner, setRegisteringPartner] = useState<boolean>(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -149,6 +150,25 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleRegisterPartner = async () => {
+    setRegisteringPartner(true);
+    try {
+      showToast('Initiating Tesla Partner Registration and verifying public key...');
+      const result = await teslaApi.registerPartner();
+      if (result.success) {
+        showToast(`Tesla partner registered successfully for domain ${result.domain}! Refreshing fleet...`);
+        setErrorMessage(null);
+        await loadFleetData();
+      } else {
+        setErrorMessage(`Tesla Partner Registration failed: ${result.message}`);
+      }
+    } catch (err: any) {
+      setErrorMessage(`Registration error: ${err.message}`);
+    } finally {
+      setRegisteringPartner(false);
+    }
+  };
+
   return (
     <div>
       <Header
@@ -214,6 +234,31 @@ export const App: React.FC = () => {
                 >
                   <Server size={15} color="var(--cyber-cyan)" />
                   <span>Configure Backend API URL</span>
+                </button>
+              </div>
+            )}
+
+            {(errorMessage.includes('412') || errorMessage.includes('Precondition') || errorMessage.includes('Partner')) && (
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between',
+                paddingTop: '0.5rem',
+                borderTop: '1px solid rgba(232, 33, 39, 0.3)',
+                flexWrap: 'wrap',
+                gap: '0.75rem'
+              }}>
+                <span style={{ fontSize: '0.85rem', color: '#fecaca' }}>
+                  Tesla requires 1-time partner account registration and public key verification for your application domain.
+                </span>
+                <button 
+                  onClick={handleRegisterPartner}
+                  disabled={registeringPartner}
+                  className="btn btn-primary"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', backgroundColor: 'var(--tesla-red)' }}
+                >
+                  <ShieldCheck size={16} />
+                  <span>{registeringPartner ? 'Registering with Tesla...' : 'Register Partner Account with Tesla'}</span>
                 </button>
               </div>
             )}

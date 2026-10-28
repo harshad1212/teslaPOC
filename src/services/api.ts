@@ -134,5 +134,33 @@ export const teslaApi = {
   async getVehicleAuditLogs(idOrVin: string | number, limit: number = 50): Promise<CommandAuditLog[]> {
     const res = await fetch(`${getApiBase()}/vehicles/${idOrVin}/commands/audit-logs?limit=${limit}`);
     return handleResponse<CommandAuditLog[]>(res);
+  },
+
+  async getPartnerStatus(): Promise<{
+    domain: string;
+    publicKeyHostedUrl: string;
+    publicKeyPem: string;
+    keyConfigured: boolean;
+    region: string;
+  }> {
+    const res = await fetch(`${getApiBase()}/partner/status`);
+    return handleResponse(res);
+  },
+
+  async registerPartner(domain?: string): Promise<{
+    success: boolean;
+    domain: string;
+    message: string;
+    publicKeyPem?: string;
+    teslaResponse?: string;
+    statusCode: number;
+  }> {
+    const res = await fetch(`${getApiBase()}/partner/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ domain })
+    });
+    return handleResponse(res);
   }
 };
+
