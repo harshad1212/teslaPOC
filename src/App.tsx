@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { TeslaConnectionStatus, Vehicle, VehicleData } from './types/tesla';
-import { teslaApi } from './services/api';
+import { teslaApi, getApiBaseUrl } from './services/api';
 import { Header } from './components/Header';
 import { ConnectionBanner } from './components/ConnectionBanner';
 import { VehicleCard } from './components/VehicleCard';
 import { VehicleDetail } from './components/VehicleDetail';
 import { ConfirmationModal } from './components/ConfirmationModal';
-import { Car, AlertCircle, CheckCircle } from 'lucide-react';
+import { ApiConfigModal } from './components/ApiConfigModal';
+import { Car, AlertCircle, CheckCircle, Server } from 'lucide-react';
 import './styles/index.css';
 
 export const App: React.FC = () => {
@@ -23,6 +24,9 @@ export const App: React.FC = () => {
   // Command modal state
   const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [pendingCommand, setPendingCommand] = useState<string>('');
+
+  // API Config modal state
+  const [apiConfigOpen, setApiConfigOpen] = useState<boolean>(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -95,8 +99,7 @@ export const App: React.FC = () => {
       if (status?.isMockMode) {
         // In mock mode, simulate authorization code callback
         showToast('Simulating Tesla OAuth authorization in Mock Mode...');
-        const callbackUrl = `/api/tesla/auth/callback?code=mock_code&state=${login.state}`;
-        await fetch(callbackUrl);
+        await teslaApi.simulateMockCallback(login.state);
         showToast('Tesla account connected successfully in Mock Mode!');
         await loadFleetData();
       } else {
@@ -176,18 +179,44 @@ export const App: React.FC = () => {
 
         {errorMessage && (
           <div style={{
-            background: 'rgba(232, 33, 39, 0.2)',
+            background: 'rgba(232, 33, 39, 0.15)',
             border: '1px solid var(--tesla-red)',
             color: '#fca5a5',
-            padding: '0.75rem 1.25rem',
+            padding: '1rem 1.25rem',
             borderRadius: 'var(--radius-sm)',
             marginBottom: '1.5rem',
             display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
+            flexDirection: 'column',
+            gap: '0.75rem'
           }}>
-            <AlertCircle size={18} />
-            <span>{errorMessage}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <AlertCircle size={20} />
+              <span style={{ fontWeight: 500 }}>{errorMessage}</span>
+            </div>
+            
+            {(errorMessage.includes('HTML') || errorMessage.includes('JSON') || errorMessage.includes('Backend')) && (
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between',
+                paddingTop: '0.5rem',
+                borderTop: '1px solid rgba(232, 33, 39, 0.3)',
+                flexWrap: 'wrap',
+                gap: '0.75rem'
+              }}>
+                <span style={{ fontSize: '0.85rem', color: '#fecaca' }}>
+                  The frontend is not connected to your .NET backend API. Click below to enter your deployed App Service URL.
+                </span>
+                <button 
+                  onClick={() => setApiConfigOpen(true)}
+                  className="btn btn-secondary"
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
+                >
+                  <Server size={15} color="var(--cyber-cyan)" />
+                  <span>Configure Backend API URL</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -206,7 +235,19 @@ export const App: React.FC = () => {
 
           {vehicles.length === 0 && !loading && (
             <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', marginTop: '1.5rem' }}>
-              <p style={{ color: 'var(--text-muted)' }}>No vehicles found in this Tesla account.</p>
+              <p style={{ color: 'var(--text-muted)' }}>
+                {errorMessage ? 'Unable to load fleet until backend API is connected.' : 'No vehicles found in this Tesla account.'}
+              </p>
+              {errorMessage && (
+                <button 
+                  onClick={() => setApiConfigOpen(true)}
+                  className="btn btn-secondary"
+                  style={{ marginTop: '1rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                >
+                  <Server size={16} />
+                  <span>Connect Backend API ({getApiBaseUrl() || 'Not Set'})</span>
+                </button>
+              )}
             </div>
           )}
 
@@ -240,6 +281,12 @@ export const App: React.FC = () => {
         vin={selectedVehicle?.vin || ''}
         onConfirm={handleConfirmCommand}
         onCancel={() => setModalOpen(false)}
+      />
+
+      <ApiConfigModal
+        isOpen={apiConfigOpen}
+        onClose={() => setApiConfigOpen(false)}
+        onConfigSaved={loadFleetData}
       />
     </div>
   );

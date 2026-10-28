@@ -1,9 +1,39 @@
 import { TeslaConnectionStatus, Vehicle, VehicleData, LoginUrlResponse, TelemetryRecord, SimulatorStatus, CommandAuditLog, VehicleCommandResult } from '../types/tesla';
 
-const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
-const API_BASE = `${baseUrl}/api/tesla`;
+export function getApiBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem('tesla_api_base_url');
+    if (stored) return stored.replace(/\/+$/, '');
+  }
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  return (envUrl || '').replace(/\/+$/, '');
+}
+
+export function setApiBaseUrl(url: string): void {
+  if (typeof window !== 'undefined') {
+    const cleaned = (url || '').trim().replace(/\/+$/, '');
+    if (cleaned) {
+      localStorage.setItem('tesla_api_base_url', cleaned);
+    } else {
+      localStorage.removeItem('tesla_api_base_url');
+    }
+  }
+}
+
+function getApiBase(): string {
+  const base = getApiBaseUrl();
+  return base ? `${base}/api/tesla` : '/api/tesla';
+}
 
 async function handleResponse<T>(res: Response): Promise<T> {
+  const contentType = res.headers.get('content-type') || '';
+  if (contentType.includes('text/html')) {
+    const currentBase = getApiBaseUrl() || window.location.origin;
+    throw new Error(
+      `Endpoint returned HTML instead of JSON. Ensure your .NET backend is running and the Backend API URL is configured (${currentBase}).`
+    );
+  }
+
   if (!res.ok) {
     let errorDetail = `HTTP ${res.status}: ${res.statusText}`;
     try {
@@ -19,42 +49,49 @@ async function handleResponse<T>(res: Response): Promise<T> {
 
 export const teslaApi = {
   async getConnectionStatus(): Promise<TeslaConnectionStatus> {
-    const res = await fetch(`${API_BASE}/connection`);
+    const res = await fetch(`${getApiBase()}/connection`);
     return handleResponse<TeslaConnectionStatus>(res);
   },
 
   async getLoginUrl(): Promise<LoginUrlResponse> {
-    const res = await fetch(`${API_BASE}/auth/login`);
+    const res = await fetch(`${getApiBase()}/auth/login`);
     return handleResponse<LoginUrlResponse>(res);
   },
 
+  async simulateMockCallback(state: string): Promise<void> {
+    const res = await fetch(`${getApiBase()}/auth/callback?code=mock_code&state=${encodeURIComponent(state)}`);
+    if (!res.ok) {
+      throw new Error(`Mock authorization failed with status ${res.status}`);
+    }
+  },
+
   async disconnect(): Promise<{ message: string }> {
-    const res = await fetch(`${API_BASE}/auth/disconnect`, { method: 'POST' });
+    const res = await fetch(`${getApiBase()}/auth/disconnect`, { method: 'POST' });
     return handleResponse<{ message: string }>(res);
   },
 
   async getVehicles(): Promise<Vehicle[]> {
-    const res = await fetch(`${API_BASE}/vehicles`);
+    const res = await fetch(`${getApiBase()}/vehicles`);
     return handleResponse<Vehicle[]>(res);
   },
 
   async getVehicle(idOrVin: string | number): Promise<Vehicle> {
-    const res = await fetch(`${API_BASE}/vehicles/${idOrVin}`);
+    const res = await fetch(`${getApiBase()}/vehicles/${idOrVin}`);
     return handleResponse<Vehicle>(res);
   },
 
   async getVehicleData(idOrVin: string | number): Promise<VehicleData> {
-    const res = await fetch(`${API_BASE}/vehicles/${idOrVin}/data`);
+    const res = await fetch(`${getApiBase()}/vehicles/${idOrVin}/data`);
     return handleResponse<VehicleData>(res);
   },
 
   async wakeUpVehicle(idOrVin: string | number): Promise<{ success: boolean; message: string }> {
-    const res = await fetch(`${API_BASE}/vehicles/${idOrVin}/wake`, { method: 'POST' });
+    const res = await fetch(`${getApiBase()}/vehicles/${idOrVin}/wake`, { method: 'POST' });
     return handleResponse<{ success: boolean; message: string }>(res);
   },
 
   async getLatestTelemetry(vin: string): Promise<TelemetryRecord[]> {
-    const res = await fetch(`${API_BASE}/telemetry/${vin}/latest`);
+    const res = await fetch(`${getApiBase()}/telemetry/${vin}/latest`);
     return handleResponse<TelemetryRecord[]>(res);
   },
 
@@ -62,17 +99,17 @@ export const teslaApi = {
     const params = new URLSearchParams();
     if (signalName) params.append('signalName', signalName);
     params.append('limit', limit.toString());
-    const res = await fetch(`${API_BASE}/telemetry/${vin}/history?${params.toString()}`);
+    const res = await fetch(`${getApiBase()}/telemetry/${vin}/history?${params.toString()}`);
     return handleResponse<TelemetryRecord[]>(res);
   },
 
   async getSimulatorStatus(): Promise<SimulatorStatus> {
-    const res = await fetch(`${API_BASE}/telemetry/simulator/status`);
+    const res = await fetch(`${getApiBase()}/telemetry/simulator/status`);
     return handleResponse<SimulatorStatus>(res);
   },
 
   async toggleSimulator(enable: boolean, vin?: string, intervalSeconds: number = 3): Promise<SimulatorStatus> {
-    const res = await fetch(`${API_BASE}/telemetry/simulator/toggle`, {
+    const res = await fetch(`${getApiBase()}/telemetry/simulator/toggle`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ enable, vin, intervalSeconds })
@@ -86,7 +123,7 @@ export const teslaApi = {
     parameters?: Record<string, any>,
     confirmedByUser: boolean = true
   ): Promise<VehicleCommandResult> {
-    const res = await fetch(`${API_BASE}/vehicles/${idOrVin}/command`, {
+    const res = await fetch(`${getApiBase()}/vehicles/${idOrVin}/command`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ command, parameters, confirmedByUser })
@@ -95,7 +132,7 @@ export const teslaApi = {
   },
 
   async getVehicleAuditLogs(idOrVin: string | number, limit: number = 50): Promise<CommandAuditLog[]> {
-    const res = await fetch(`${API_BASE}/vehicles/${idOrVin}/commands/audit-logs?limit=${limit}`);
+    const res = await fetch(`${getApiBase()}/vehicles/${idOrVin}/commands/audit-logs?limit=${limit}`);
     return handleResponse<CommandAuditLog[]>(res);
   }
 };
