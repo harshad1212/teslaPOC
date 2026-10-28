@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/staticwebapp.config.json",
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/assets/*.{css,js}", "/favicon.ico", "/*.{png,jpg,gif,svg,webp}"]
+    "exclude": ["/assets/*.{css,js}", "/favicon.ico", "/*.{png,jpg,gif,svg,webp}", "/.well-known/*", "*.pem"]
   },
   "globalHeaders": {
     "X-Content-Type-Options": "nosniff",
@@ -11,6 +11,7 @@
   },
   "mimeTypes": {
     ".json": "application/json",
-    ".webp": "image/webp"
+    ".webp": "image/webp",
+    ".pem": "text/plain"
   }
 }
