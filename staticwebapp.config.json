@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/staticwebapp.config.json",
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/assets/*.{css,js}", "/favicon.ico", "/*.{png,jpg,gif,svg,webp}"]
+  },
+  "globalHeaders": {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Content-Security-Policy": "frame-ancestors 'none';"
+  },
+  "mimeTypes": {
+    ".json": "application/json",
+    ".webp": "image/webp"
+  }
+}
