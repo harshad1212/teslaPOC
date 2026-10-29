@@ -1,18 +1,25 @@
 import React, { useState } from 'react';
+import { TeslaConnectionStatus } from '../types/tesla';
 import { getApiBaseUrl } from '../services/api';
-import { Zap, RefreshCw, Server, HelpCircle } from 'lucide-react';
+import { Zap, RefreshCw, Server, HelpCircle, LogOut, LogIn } from 'lucide-react';
 import { ApiConfigModal } from './ApiConfigModal';
 import { OperatorGuideModal } from './OperatorGuideModal';
 import { Tooltip } from './Tooltip';
 
 interface HeaderProps {
+  status: TeslaConnectionStatus | null;
   loading: boolean;
   onRefresh: () => void;
+  onConnect?: () => void;
+  onDisconnect?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
+  status,
   loading,
-  onRefresh
+  onRefresh,
+  onConnect,
+  onDisconnect
 }) => {
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [guideModalOpen, setGuideModalOpen] = useState(false);
@@ -30,16 +37,25 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
-          <Tooltip 
-            position="bottom"
-            title="Enterprise Partner Auth (M2M)"
-            content="Direct backend-to-backend authentication using OAuth 2.0 client_credentials against fleet-auth.prd.vn.cloud.tesla.com. Interactive logins are bypassed for company-owned fleets."
-          >
-            <div className="mode-badge live" style={{ background: 'rgba(16, 185, 129, 0.15)', borderColor: 'rgba(16, 185, 129, 0.4)', cursor: 'help' }}>
-              <span className="pulse-dot" style={{ backgroundColor: '#10b981' }} />
-              <span style={{ color: '#10b981', fontWeight: 600 }}>ENTERPRISE M2M</span>
+          {status?.isConnected ? (
+            <Tooltip 
+              position="bottom"
+              title="Authenticated Operator Identity"
+              content={`Verified Tesla session for ${status.email || 'authorized operator'}. All commands and telemetry queries are cryptographically attributed to this account.`}
+            >
+              <div className="mode-badge live" style={{ background: 'rgba(16, 185, 129, 0.15)', borderColor: 'rgba(16, 185, 129, 0.4)', cursor: 'help' }}>
+                <span className="pulse-dot" style={{ backgroundColor: '#10b981' }} />
+                <span style={{ color: '#10b981', fontWeight: 600 }}>
+                  {status.email ? status.email : 'OPERATOR ACTIVE'}
+                </span>
+              </div>
+            </Tooltip>
+          ) : (
+            <div className="mode-badge" style={{ background: 'rgba(245, 158, 11, 0.15)', borderColor: 'rgba(245, 158, 11, 0.4)' }}>
+              <span className="pulse-dot" style={{ backgroundColor: '#f59e0b' }} />
+              <span style={{ color: '#f59e0b', fontWeight: 600 }}>AUTH REQUIRED</span>
             </div>
-          </Tooltip>
+          )}
 
           <Tooltip
             position="bottom"
@@ -86,6 +102,39 @@ export const Header: React.FC<HeaderProps> = ({
               <span>Refresh Fleet</span>
             </button>
           </Tooltip>
+
+          {status?.isConnected ? (
+            <Tooltip
+              position="bottom"
+              title="Sign Out / Disconnect"
+              content="Invalidates the active Tesla session, clearing cached tokens and securing the fleet dashboard."
+            >
+              <button
+                onClick={onDisconnect}
+                className="btn btn-secondary"
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '0.4rem', 
+                  fontSize: '0.85rem',
+                  borderColor: 'rgba(232, 33, 39, 0.4)',
+                  color: '#fca5a5'
+                }}
+              >
+                <LogOut size={15} color="var(--tesla-red)" />
+                <span>Sign Out</span>
+              </button>
+            </Tooltip>
+          ) : (
+            <button
+              onClick={onConnect}
+              className="btn btn-primary"
+              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
+            >
+              <LogIn size={15} />
+              <span>Sign In</span>
+            </button>
+          )}
         </div>
       </header>
 

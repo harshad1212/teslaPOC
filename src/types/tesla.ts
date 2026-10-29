@@ -43,6 +43,11 @@ export interface VehicleData {
 }
 
 
+export interface LoginUrlResponse {
+  authorizeUrl: string;
+  state: string;
+}
+
 export interface TelemetryRecord {
   id: string;
   vin: string;

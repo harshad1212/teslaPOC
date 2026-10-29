@@ -40,7 +40,7 @@ export const ConnectionBanner: React.FC<ConnectionBannerProps> = ({ status, flee
               />
             </div>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
-              Corporate Identity: <strong style={{ color: 'var(--text-secondary)' }}>{status.email || 'Tesla Enterprise Corporate Client'}</strong>
+              Operator Identity: <strong style={{ color: 'var(--text-secondary)' }}>{status.email || (status.isConnected ? 'Authorized Fleet Operator' : 'Authentication Required')}</strong>
             </div>
           </div>
         </div>
@@ -59,12 +59,12 @@ export const ConnectionBanner: React.FC<ConnectionBannerProps> = ({ status, flee
 
           <Tooltip
             position="top"
-            title="M2M Machine-to-Machine Security"
-            content="Direct client_credentials OAuth token issued to your Tesla Developer Application. Bypasses consumer password prompts for owned vehicles."
+            title="OAuth Gated Security"
+            content="Access is strictly restricted to verified Tesla operators matching authorized developer credentials. Commands and telemetry are cryptographically gated."
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-secondary)', cursor: 'help' }}>
-              <Cpu size={16} color="#10b981" />
-              <span>Auth: <strong style={{ color: '#10b981' }}>Enterprise M2M Token</strong></span>
+              <Cpu size={16} color={status.isConnected ? '#10b981' : '#f59e0b'} />
+              <span>Auth: <strong style={{ color: status.isConnected ? '#10b981' : '#f59e0b' }}>{status.isConnected ? 'Tesla OAuth Verified' : 'Locked'}</strong></span>
             </div>
           </Tooltip>
 
