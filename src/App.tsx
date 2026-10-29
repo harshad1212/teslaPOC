@@ -153,8 +153,8 @@ export const App: React.FC = () => {
   const handleRegisterPartner = async () => {
     setRegisteringPartner(true);
     try {
-      showToast('Initiating Tesla Partner Registration and verifying public key...');
-      const result = await teslaApi.registerPartner();
+      const currentDomain = window.location.hostname || 'lively-desert-0c5185b00.1.azurestaticapps.net';
+      const result = await teslaApi.registerPartner(currentDomain);
       if (result.success) {
         showToast(`Tesla partner registered successfully for domain ${result.domain}! Refreshing fleet...`);
         setErrorMessage(null);
