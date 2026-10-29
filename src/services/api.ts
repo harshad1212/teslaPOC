@@ -148,19 +148,22 @@ export const teslaApi = {
   },
 
   async registerPartner(domain?: string): Promise<{
-    success: boolean;
-    domain: string;
-    message: string;
-    publicKeyPem?: string;
-    teslaResponse?: string;
-    statusCode: number;
-  }> {
-    const res = await fetch(`${getApiBase()}/partner/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ domain })
-    });
-    return handleResponse(res);
-  }
+  success: boolean;
+  domain: string;
+  message: string;
+  publicKeyPem?: string;
+  teslaResponse?: string;
+  statusCode: number;
+}> {
+   const res = await fetch(`${getApiBase()}/partner/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      domain: 'lively-desert-0c5185b00.1.azurestaticapps.net'
+    })
+  });
+
+  return handleResponse(res);
+}
 };
 
