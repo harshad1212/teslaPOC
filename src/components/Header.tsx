@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { getApiBaseUrl } from '../services/api';
-import { Zap, RefreshCw, Server } from 'lucide-react';
+import { Zap, RefreshCw, Server, HelpCircle } from 'lucide-react';
 import { ApiConfigModal } from './ApiConfigModal';
+import { OperatorGuideModal } from './OperatorGuideModal';
+import { Tooltip } from './Tooltip';
 
 interface HeaderProps {
   loading: boolean;
@@ -13,6 +15,7 @@ export const Header: React.FC<HeaderProps> = ({
   onRefresh
 }) => {
   const [configModalOpen, setConfigModalOpen] = useState(false);
+  const [guideModalOpen, setGuideModalOpen] = useState(false);
   const currentBase = getApiBaseUrl();
 
   return (
@@ -26,33 +29,63 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="brand-badge">Enterprise Fleet Operations</span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-          <div className="mode-badge live" style={{ background: 'rgba(16, 185, 129, 0.15)', borderColor: 'rgba(16, 185, 129, 0.4)' }}>
-            <span className="pulse-dot" style={{ backgroundColor: '#10b981' }} />
-            <span style={{ color: '#10b981', fontWeight: 600 }}>ENTERPRISE M2M</span>
-          </div>
-
-          <button
-            onClick={() => setConfigModalOpen(true)}
-            className="btn btn-secondary"
-            title={currentBase ? `API: ${currentBase}` : 'Configure Backend API URL'}
-            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
+          <Tooltip 
+            position="bottom"
+            title="Enterprise Partner Auth (M2M)"
+            content="Direct backend-to-backend authentication using OAuth 2.0 client_credentials against fleet-auth.prd.vn.cloud.tesla.com. Interactive logins are bypassed for company-owned fleets."
           >
-            <Server size={15} color={currentBase ? 'var(--cyber-cyan)' : 'var(--text-muted)'} />
-            <span style={{ fontSize: '0.85rem' }}>
-              {currentBase ? 'API URL' : 'Set API'}
-            </span>
-          </button>
+            <div className="mode-badge live" style={{ background: 'rgba(16, 185, 129, 0.15)', borderColor: 'rgba(16, 185, 129, 0.4)', cursor: 'help' }}>
+              <span className="pulse-dot" style={{ backgroundColor: '#10b981' }} />
+              <span style={{ color: '#10b981', fontWeight: 600 }}>ENTERPRISE M2M</span>
+            </div>
+          </Tooltip>
 
-          <button 
-            onClick={onRefresh} 
-            disabled={loading} 
-            className="btn btn-secondary"
-            title="Refresh Fleet Data"
+          <Tooltip
+            position="bottom"
+            title="Interactive Operations Guide"
+            content="Click to open the complete reference guide explaining fleet telemetry metrics, vehicle sleep vs online states, safety gates, and audit logs."
           >
-            <RefreshCw size={16} className={loading ? 'spin' : ''} />
-            <span>Refresh Fleet</span>
-          </button>
+            <button
+              onClick={() => setGuideModalOpen(true)}
+              className="btn btn-secondary"
+              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
+            >
+              <HelpCircle size={15} color="var(--cyber-cyan)" />
+              <span>Fleet Guide</span>
+            </button>
+          </Tooltip>
+
+          <Tooltip
+            position="bottom"
+            title="Backend API Gateway"
+            content={`Active: ${currentBase || 'Direct Origin'}. Click to test latency or configure custom Azure App Service URL.`}
+          >
+            <button
+              onClick={() => setConfigModalOpen(true)}
+              className="btn btn-secondary"
+              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
+            >
+              <Server size={15} color={currentBase ? 'var(--cyber-cyan)' : 'var(--text-muted)'} />
+              <span>{currentBase ? 'API URL' : 'Set API'}</span>
+            </button>
+          </Tooltip>
+
+          <Tooltip
+            position="bottom"
+            title="Sync Fleet Status"
+            content="Fetches fresh vehicle status, wake states, and telemetry snapshots directly from the Tesla Fleet API."
+          >
+            <button 
+              onClick={onRefresh} 
+              disabled={loading} 
+              className="btn btn-secondary"
+              style={{ fontSize: '0.85rem' }}
+            >
+              <RefreshCw size={15} className={loading ? 'spin' : ''} />
+              <span>Refresh Fleet</span>
+            </button>
+          </Tooltip>
         </div>
       </header>
 
@@ -60,6 +93,11 @@ export const Header: React.FC<HeaderProps> = ({
         isOpen={configModalOpen}
         onClose={() => setConfigModalOpen(false)}
         onConfigSaved={onRefresh}
+      />
+
+      <OperatorGuideModal
+        isOpen={guideModalOpen}
+        onClose={() => setGuideModalOpen(false)}
       />
     </>
   );

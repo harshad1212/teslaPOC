@@ -7,6 +7,7 @@ import { VehicleCard } from './components/VehicleCard';
 import { VehicleDetail } from './components/VehicleDetail';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { ApiConfigModal } from './components/ApiConfigModal';
+import { InfoTooltip } from './components/Tooltip';
 import { Car, AlertCircle, CheckCircle, Server } from 'lucide-react';
 import './styles/index.css';
 
@@ -193,13 +194,17 @@ export const App: React.FC = () => {
         <ConnectionBanner status={status} fleetCount={vehicles.length} />
 
         <section style={{ marginBottom: '2rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <Car size={22} color="var(--cyber-cyan)" />
-              <h2 style={{ fontSize: '1.5rem' }}>Connected Vehicle Fleet ({vehicles.length})</h2>
+              <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Connected Vehicle Fleet ({vehicles.length})</h2>
+              <InfoTooltip
+                title="Corporate Fleet Registry"
+                content="Real-time list of all company vehicles provisioned under your Tesla Fleet developer credentials. Click any vehicle to load live telemetry or execute safety-gated commands."
+              />
             </div>
             <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              Click a vehicle card to view detailed telemetry
+              Click any vehicle to view real-time CAN bus telemetry
             </span>
           </div>
 
