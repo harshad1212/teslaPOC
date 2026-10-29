@@ -1,23 +1,16 @@
 import React, { useState } from 'react';
-import { TeslaConnectionStatus } from '../types/tesla';
 import { getApiBaseUrl } from '../services/api';
-import { Zap, LogIn, LogOut, RefreshCw, Server } from 'lucide-react';
+import { Zap, RefreshCw, Server } from 'lucide-react';
 import { ApiConfigModal } from './ApiConfigModal';
 
 interface HeaderProps {
-  status: TeslaConnectionStatus | null;
   loading: boolean;
   onRefresh: () => void;
-  onConnect: () => void;
-  onDisconnect: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  status,
   loading,
-  onRefresh,
-  onConnect,
-  onDisconnect
+  onRefresh
 }) => {
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const currentBase = getApiBaseUrl();
@@ -30,16 +23,14 @@ export const Header: React.FC<HeaderProps> = ({
             <Zap size={28} className="text-tesla" />
             <span>TESLA</span>
           </div>
-          <span className="brand-badge">Fleet API POC</span>
+          <span className="brand-badge">Enterprise Fleet Operations</span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-          {status && (
-            <div className={`mode-badge ${status.isMockMode ? 'mock' : 'live'}`}>
-              <span className="pulse-dot" />
-              <span>{status.isMockMode ? 'MOCK MODE' : 'LIVE API'}</span>
-            </div>
-          )}
+          <div className="mode-badge live" style={{ background: 'rgba(16, 185, 129, 0.15)', borderColor: 'rgba(16, 185, 129, 0.4)' }}>
+            <span className="pulse-dot" style={{ backgroundColor: '#10b981' }} />
+            <span style={{ color: '#10b981', fontWeight: 600 }}>ENTERPRISE M2M</span>
+          </div>
 
           <button
             onClick={() => setConfigModalOpen(true)}
@@ -60,20 +51,8 @@ export const Header: React.FC<HeaderProps> = ({
             title="Refresh Fleet Data"
           >
             <RefreshCw size={16} className={loading ? 'spin' : ''} />
-            <span>Refresh</span>
+            <span>Refresh Fleet</span>
           </button>
-
-          {status?.isConnected ? (
-            <button onClick={onDisconnect} className="btn btn-danger">
-              <LogOut size={16} />
-              <span>Disconnect</span>
-            </button>
-          ) : (
-            <button onClick={onConnect} className="btn btn-primary">
-              <LogIn size={16} />
-              <span>Connect Tesla</span>
-            </button>
-          )}
         </div>
       </header>
 

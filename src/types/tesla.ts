@@ -42,10 +42,6 @@ export interface VehicleData {
   isMockData: boolean;
 }
 
-export interface LoginUrlResponse {
-  authorizeUrl: string;
-  state: string;
-}
 
 export interface TelemetryRecord {
   id: string;

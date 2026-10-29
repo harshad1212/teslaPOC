@@ -1,4 +1,4 @@
-import { TeslaConnectionStatus, Vehicle, VehicleData, LoginUrlResponse, TelemetryRecord, SimulatorStatus, CommandAuditLog, VehicleCommandResult } from '../types/tesla';
+import { TeslaConnectionStatus, Vehicle, VehicleData, TelemetryRecord, SimulatorStatus, CommandAuditLog, VehicleCommandResult } from '../types/tesla';
 
 export function getApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
@@ -53,22 +53,7 @@ export const teslaApi = {
     return handleResponse<TeslaConnectionStatus>(res);
   },
 
-  async getLoginUrl(): Promise<LoginUrlResponse> {
-    const res = await fetch(`${getApiBase()}/auth/login`);
-    return handleResponse<LoginUrlResponse>(res);
-  },
 
-  async simulateMockCallback(state: string): Promise<void> {
-    const res = await fetch(`${getApiBase()}/auth/callback?code=mock_code&state=${encodeURIComponent(state)}`);
-    if (!res.ok) {
-      throw new Error(`Mock authorization failed with status ${res.status}`);
-    }
-  },
-
-  async disconnect(): Promise<{ message: string }> {
-    const res = await fetch(`${getApiBase()}/auth/disconnect`, { method: 'POST' });
-    return handleResponse<{ message: string }>(res);
-  },
 
   async getVehicles(): Promise<Vehicle[]> {
     const res = await fetch(`${getApiBase()}/vehicles`);
@@ -136,33 +121,5 @@ export const teslaApi = {
     return handleResponse<CommandAuditLog[]>(res);
   },
 
-  async getPartnerStatus(): Promise<{
-    domain: string;
-    publicKeyHostedUrl: string;
-    publicKeyPem: string;
-    keyConfigured: boolean;
-    region: string;
-  }> {
-    const res = await fetch(`${getApiBase()}/partner/status`);
-    return handleResponse(res);
-  },
-
-  async registerPartner(domain?: string): Promise<{
-    success: boolean;
-    domain: string;
-    message: string;
-    publicKeyPem?: string;
-    teslaResponse?: string;
-    statusCode: number;
-  }> {
-    const targetDomain = domain || 'lively-desert-0c5185b00.1.azurestaticapps.net';
-    const res = await fetch(`${getApiBase()}/partner/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ domain: targetDomain })
-    });
-
-  return handleResponse(res);
-}
 };
 

@@ -7,7 +7,7 @@ import { VehicleCard } from './components/VehicleCard';
 import { VehicleDetail } from './components/VehicleDetail';
 import { ConfirmationModal } from './components/ConfirmationModal';
 import { ApiConfigModal } from './components/ApiConfigModal';
-import { Car, AlertCircle, CheckCircle, Server, ShieldCheck } from 'lucide-react';
+import { Car, AlertCircle, CheckCircle, Server } from 'lucide-react';
 import './styles/index.css';
 
 export const App: React.FC = () => {
@@ -27,7 +27,6 @@ export const App: React.FC = () => {
 
   // API Config modal state
   const [apiConfigOpen, setApiConfigOpen] = useState<boolean>(false);
-  const [registeringPartner, setRegisteringPartner] = useState<boolean>(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -94,34 +93,6 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleConnect = async () => {
-    try {
-      const login = await teslaApi.getLoginUrl();
-      if (status?.isMockMode) {
-        // In mock mode, simulate authorization code callback
-        showToast('Simulating Tesla OAuth authorization in Mock Mode...');
-        await teslaApi.simulateMockCallback(login.state);
-        showToast('Tesla account connected successfully in Mock Mode!');
-        await loadFleetData();
-      } else {
-        // In live mode, redirect to Tesla OAuth
-        window.location.href = login.authorizeUrl;
-      }
-    } catch (err: any) {
-      setErrorMessage(`Login error: ${err.message}`);
-    }
-  };
-
-  const handleDisconnect = async () => {
-    try {
-      await teslaApi.disconnect();
-      showToast('Tesla account disconnected.');
-      await loadFleetData();
-    } catch (err: any) {
-      setErrorMessage(`Disconnect error: ${err.message}`);
-    }
-  };
-
   const handleCommandPreview = (commandName: string) => {
     setPendingCommand(commandName);
     setModalOpen(true);
@@ -150,33 +121,11 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleRegisterPartner = async () => {
-    setRegisteringPartner(true);
-    try {
-      const currentDomain = window.location.hostname || 'lively-desert-0c5185b00.1.azurestaticapps.net';
-      const result = await teslaApi.registerPartner(currentDomain);
-      if (result.success) {
-        showToast(`Tesla partner registered successfully for domain ${result.domain}! Refreshing fleet...`);
-        setErrorMessage(null);
-        await loadFleetData();
-      } else {
-        setErrorMessage(`Tesla Partner Registration failed: ${result.message}`);
-      }
-    } catch (err: any) {
-      setErrorMessage(`Registration error: ${err.message}`);
-    } finally {
-      setRegisteringPartner(false);
-    }
-  };
-
   return (
     <div>
       <Header
-        status={status}
         loading={loading}
         onRefresh={loadFleetData}
-        onConnect={handleConnect}
-        onDisconnect={handleDisconnect}
       />
 
       <main className="app-container">
@@ -238,34 +187,10 @@ export const App: React.FC = () => {
               </div>
             )}
 
-            {(errorMessage.includes('412') || errorMessage.includes('Precondition') || errorMessage.includes('Partner')) && (
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'space-between',
-                paddingTop: '0.5rem',
-                borderTop: '1px solid rgba(232, 33, 39, 0.3)',
-                flexWrap: 'wrap',
-                gap: '0.75rem'
-              }}>
-                <span style={{ fontSize: '0.85rem', color: '#fecaca' }}>
-                  Tesla requires 1-time partner account registration and public key verification for your application domain.
-                </span>
-                <button 
-                  onClick={handleRegisterPartner}
-                  disabled={registeringPartner}
-                  className="btn btn-primary"
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', backgroundColor: 'var(--tesla-red)' }}
-                >
-                  <ShieldCheck size={16} />
-                  <span>{registeringPartner ? 'Registering with Tesla...' : 'Register Partner Account with Tesla'}</span>
-                </button>
-              </div>
-            )}
           </div>
         )}
 
-        <ConnectionBanner status={status} />
+        <ConnectionBanner status={status} fleetCount={vehicles.length} />
 
         <section style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
