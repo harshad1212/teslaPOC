@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { TeslaConnectionStatus } from '../types/tesla';
-import { getApiBaseUrl } from '../services/api';
-import { Zap, RefreshCw, Server, HelpCircle, LogOut, LogIn } from 'lucide-react';
-import { ApiConfigModal } from './ApiConfigModal';
+import { Zap, RefreshCw, HelpCircle, LogOut, LogIn } from 'lucide-react';
 import { OperatorGuideModal } from './OperatorGuideModal';
 import { Tooltip } from './Tooltip';
 
@@ -21,9 +19,7 @@ export const Header: React.FC<HeaderProps> = ({
   onConnect,
   onDisconnect
 }) => {
-  const [configModalOpen, setConfigModalOpen] = useState(false);
   const [guideModalOpen, setGuideModalOpen] = useState(false);
-  const currentBase = getApiBaseUrl();
 
   return (
     <>
@@ -69,21 +65,6 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <HelpCircle size={15} color="var(--cyber-cyan)" />
               <span>Fleet Guide</span>
-            </button>
-          </Tooltip>
-
-          <Tooltip
-            position="bottom"
-            title="Backend API Gateway"
-            content={`Active: ${currentBase || 'Direct Origin'}. Click to test latency or configure custom Azure App Service URL.`}
-          >
-            <button
-              onClick={() => setConfigModalOpen(true)}
-              className="btn btn-secondary"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
-            >
-              <Server size={15} color={currentBase ? 'var(--cyber-cyan)' : 'var(--text-muted)'} />
-              <span>{currentBase ? 'API URL' : 'Set API'}</span>
             </button>
           </Tooltip>
 
@@ -137,12 +118,6 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
       </header>
-
-      <ApiConfigModal
-        isOpen={configModalOpen}
-        onClose={() => setConfigModalOpen(false)}
-        onConfigSaved={onRefresh}
-      />
 
       <OperatorGuideModal
         isOpen={guideModalOpen}

@@ -1,18 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { TeslaConnectionStatus, Vehicle, VehicleData } from './types/tesla';
-import { teslaApi, getApiBaseUrl } from './services/api';
+import { teslaApi } from './services/api';
 import { Header } from './components/Header';
 import { ConnectionBanner } from './components/ConnectionBanner';
 import { VehicleCard } from './components/VehicleCard';
 import { VehicleDetail } from './components/VehicleDetail';
 import { ConfirmationModal } from './components/ConfirmationModal';
-import { ApiConfigModal } from './components/ApiConfigModal';
 import { InfoTooltip } from './components/Tooltip';
 import { 
   Car, 
   AlertCircle, 
   CheckCircle, 
-  Server, 
   Lock, 
   Zap, 
   ArrowRight, 
@@ -35,9 +33,6 @@ export const App: React.FC = () => {
   // Command modal state
   const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [pendingCommand, setPendingCommand] = useState<string>('');
-
-  // API Config modal state
-  const [apiConfigOpen, setApiConfigOpen] = useState<boolean>(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -323,15 +318,6 @@ export const App: React.FC = () => {
                   <span>Connect Simulated Mock Account</span>
                 </button>
               )}
-
-              <button
-                onClick={() => setApiConfigOpen(true)}
-                className="btn btn-secondary"
-                style={{ width: '100%', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: 'var(--text-muted)' }}
-              >
-                <Server size={15} color="var(--cyber-cyan)" />
-                <span>Backend Gateway: {getApiBaseUrl() || 'Direct Origin'}</span>
-              </button>
             </div>
 
             {/* Security Assurance Badges */}
@@ -370,12 +356,6 @@ export const App: React.FC = () => {
             </div>
           </div>
         </main>
-
-        <ApiConfigModal
-          isOpen={apiConfigOpen}
-          onClose={() => setApiConfigOpen(false)}
-          onConfigSaved={loadFleetData}
-        />
       </div>
     );
   }
@@ -426,30 +406,6 @@ export const App: React.FC = () => {
               <span style={{ fontWeight: 500 }}>{errorMessage}</span>
             </div>
             
-            {(errorMessage.includes('HTML') || errorMessage.includes('JSON') || errorMessage.includes('Backend')) && (
-              <div style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'space-between',
-                paddingTop: '0.5rem',
-                borderTop: '1px solid rgba(232, 33, 39, 0.3)',
-                flexWrap: 'wrap',
-                gap: '0.75rem'
-              }}>
-                <span style={{ fontSize: '0.85rem', color: '#fecaca' }}>
-                  The frontend is not connected to your .NET backend API. Click below to enter your deployed App Service URL.
-                </span>
-                <button 
-                  onClick={() => setApiConfigOpen(true)}
-                  className="btn btn-secondary"
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
-                >
-                  <Server size={15} color="var(--cyber-cyan)" />
-                  <span>Configure Backend API URL</span>
-                </button>
-              </div>
-            )}
-
           </div>
         )}
 
@@ -475,16 +431,6 @@ export const App: React.FC = () => {
               <p style={{ color: 'var(--text-muted)' }}>
                 {errorMessage ? 'Unable to load fleet until backend API is connected.' : 'No vehicles found in this Tesla account.'}
               </p>
-              {errorMessage && (
-                <button 
-                  onClick={() => setApiConfigOpen(true)}
-                  className="btn btn-secondary"
-                  style={{ marginTop: '1rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
-                >
-                  <Server size={16} />
-                  <span>Connect Backend API ({getApiBaseUrl() || 'Not Set'})</span>
-                </button>
-              )}
             </div>
           )}
 
@@ -518,12 +464,6 @@ export const App: React.FC = () => {
         vin={selectedVehicle?.vin || ''}
         onConfirm={handleConfirmCommand}
         onCancel={() => setModalOpen(false)}
-      />
-
-      <ApiConfigModal
-        isOpen={apiConfigOpen}
-        onClose={() => setApiConfigOpen(false)}
-        onConfigSaved={loadFleetData}
       />
     </div>
   );

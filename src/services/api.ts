@@ -28,9 +28,8 @@ function getApiBase(): string {
 async function handleResponse<T>(res: Response): Promise<T> {
   const contentType = res.headers.get('content-type') || '';
   if (contentType.includes('text/html')) {
-    const currentBase = getApiBaseUrl() || window.location.origin;
     throw new Error(
-      `Endpoint returned HTML instead of JSON. Ensure your .NET backend is running and the Backend API URL is configured (${currentBase}).`
+      'Service returned unexpected HTML response. The backend service may be temporarily unavailable or restarting.'
     );
   }
 
