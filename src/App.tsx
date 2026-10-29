@@ -44,9 +44,11 @@ export const App: React.FC = () => {
     setTimeout(() => setToastMessage(null), 4500);
   };
 
-  const loadFleetData = useCallback(async () => {
+  const loadFleetData = useCallback(async (preserveError: boolean = false) => {
     setLoading(true);
-    setErrorMessage(null);
+    if (!preserveError) {
+      setErrorMessage(null);
+    }
     try {
       const connStatus = await teslaApi.getConnectionStatus();
       setStatus(connStatus);
@@ -99,8 +101,10 @@ export const App: React.FC = () => {
     const errorParam = params.get('error');
     const connectedParam = params.get('connected');
 
+    let hasRedirectError = false;
     if (errorParam) {
       setErrorMessage(decodeURIComponent(errorParam));
+      hasRedirectError = true;
     }
     if (connectedParam === 'true') {
       showToast('Tesla operator account authenticated successfully!');
@@ -111,7 +115,7 @@ export const App: React.FC = () => {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
-    loadFleetData();
+    loadFleetData(hasRedirectError);
   }, []);
 
   const handleConnect = async () => {
