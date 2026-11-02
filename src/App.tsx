@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { TeslaConnectionStatus, Vehicle, VehicleData } from './types/tesla';
-import { teslaApi } from './services/api';
+import { teslaApi, setSessionToken } from './services/api';
 import { Header } from './components/Header';
 import { ConnectionBanner } from './components/ConnectionBanner';
 import { VehicleCard } from './components/VehicleCard';
@@ -95,18 +95,22 @@ export const App: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     const errorParam = params.get('error');
     const connectedParam = params.get('connected');
+    const sessionTokenParam = params.get('session_token');
 
     let hasRedirectError = false;
     if (errorParam) {
       setErrorMessage(decodeURIComponent(errorParam));
       hasRedirectError = true;
     }
+    if (sessionTokenParam) {
+      setSessionToken(sessionTokenParam);
+    }
     if (connectedParam === 'true') {
       showToast('Tesla operator account authenticated successfully!');
     }
 
     // Security: Clean URL query parameters so they never persist or mislead on refresh
-    if (params.has('connected') || params.has('error')) {
+    if (params.has('connected') || params.has('error') || params.has('session_token')) {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
 
@@ -131,6 +135,10 @@ export const App: React.FC = () => {
     try {
       showToast('Signing out of Tesla account...');
       await teslaApi.disconnect();
+    } catch (err: any) {
+      console.warn('Disconnect request failed:', err);
+    } finally {
+      setSessionToken(null);
       setStatus({
         isConnected: false,
         email: null,
@@ -145,8 +153,6 @@ export const App: React.FC = () => {
       setSelectedVehicle(null);
       setVehicleData(null);
       showToast('Signed out successfully. Session invalidated.');
-    } catch (err: any) {
-      showToast(`Sign out failed: ${err.message}`);
     }
   };
 

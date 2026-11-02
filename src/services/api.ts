@@ -20,9 +20,36 @@ export function setApiBaseUrl(url: string): void {
   }
 }
 
+export function getSessionToken(): string | null {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('tesla_session_token');
+  }
+  return null;
+}
+
+export function setSessionToken(token: string | null): void {
+  if (typeof window !== 'undefined') {
+    if (token && token.trim()) {
+      localStorage.setItem('tesla_session_token', token.trim());
+    } else {
+      localStorage.removeItem('tesla_session_token');
+    }
+  }
+}
+
 function getApiBase(): string {
   const base = getApiBaseUrl();
   return base ? `${base}/api/tesla` : '/api/tesla';
+}
+
+function getAuthHeaders(extraHeaders: Record<string, string> = {}): Record<string, string> {
+  const headers: Record<string, string> = { ...extraHeaders };
+  const token = getSessionToken();
+  if (token) {
+    headers['X-Session-Token'] = token;
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
 }
 
 async function handleResponse<T>(res: Response): Promise<T> {
@@ -34,6 +61,9 @@ async function handleResponse<T>(res: Response): Promise<T> {
   }
 
   if (!res.ok) {
+    if (res.status === 401) {
+      setSessionToken(null);
+    }
     let errorDetail = `HTTP ${res.status}: ${res.statusText}`;
     try {
       const data = await res.json();
@@ -48,49 +78,73 @@ async function handleResponse<T>(res: Response): Promise<T> {
 
 export const teslaApi = {
   async getConnectionStatus(): Promise<TeslaConnectionStatus> {
-    const res = await fetch(`${getApiBase()}/connection`);
+    const res = await fetch(`${getApiBase()}/connection`, {
+      headers: getAuthHeaders()
+    });
     return handleResponse<TeslaConnectionStatus>(res);
   },
 
   async getLoginUrl(): Promise<LoginUrlResponse> {
-    const res = await fetch(`${getApiBase()}/auth/login`);
+    const res = await fetch(`${getApiBase()}/auth/login`, {
+      headers: getAuthHeaders()
+    });
     return handleResponse<LoginUrlResponse>(res);
   },
 
   async simulateMockCallback(state: string): Promise<void> {
-    const res = await fetch(`${getApiBase()}/auth/callback?code=mock_code&state=${encodeURIComponent(state)}`);
+    const res = await fetch(`${getApiBase()}/auth/callback?code=mock_code&state=${encodeURIComponent(state)}`, {
+      headers: getAuthHeaders({ 'Accept': 'application/json' })
+    });
     if (!res.ok) {
       throw new Error(`Mock authorization failed with status ${res.status}`);
+    }
+    const data = await res.json().catch(() => null);
+    if (data?.sessionToken) {
+      setSessionToken(data.sessionToken);
     }
   },
 
   async disconnect(): Promise<{ message: string }> {
-    const res = await fetch(`${getApiBase()}/auth/disconnect`, { method: 'POST' });
+    const res = await fetch(`${getApiBase()}/auth/disconnect`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
     return handleResponse<{ message: string }>(res);
   },
 
   async getVehicles(): Promise<Vehicle[]> {
-    const res = await fetch(`${getApiBase()}/vehicles`);
+    const res = await fetch(`${getApiBase()}/vehicles`, {
+      headers: getAuthHeaders()
+    });
     return handleResponse<Vehicle[]>(res);
   },
 
   async getVehicle(idOrVin: string | number): Promise<Vehicle> {
-    const res = await fetch(`${getApiBase()}/vehicles/${idOrVin}`);
+    const res = await fetch(`${getApiBase()}/vehicles/${idOrVin}`, {
+      headers: getAuthHeaders()
+    });
     return handleResponse<Vehicle>(res);
   },
 
   async getVehicleData(idOrVin: string | number): Promise<VehicleData> {
-    const res = await fetch(`${getApiBase()}/vehicles/${idOrVin}/data`);
+    const res = await fetch(`${getApiBase()}/vehicles/${idOrVin}/data`, {
+      headers: getAuthHeaders()
+    });
     return handleResponse<VehicleData>(res);
   },
 
   async wakeUpVehicle(idOrVin: string | number): Promise<{ success: boolean; message: string }> {
-    const res = await fetch(`${getApiBase()}/vehicles/${idOrVin}/wake`, { method: 'POST' });
+    const res = await fetch(`${getApiBase()}/vehicles/${idOrVin}/wake`, {
+      method: 'POST',
+      headers: getAuthHeaders()
+    });
     return handleResponse<{ success: boolean; message: string }>(res);
   },
 
   async getLatestTelemetry(vin: string): Promise<TelemetryRecord[]> {
-    const res = await fetch(`${getApiBase()}/telemetry/${vin}/latest`);
+    const res = await fetch(`${getApiBase()}/telemetry/${vin}/latest`, {
+      headers: getAuthHeaders()
+    });
     return handleResponse<TelemetryRecord[]>(res);
   },
 
@@ -98,19 +152,23 @@ export const teslaApi = {
     const params = new URLSearchParams();
     if (signalName) params.append('signalName', signalName);
     params.append('limit', limit.toString());
-    const res = await fetch(`${getApiBase()}/telemetry/${vin}/history?${params.toString()}`);
+    const res = await fetch(`${getApiBase()}/telemetry/${vin}/history?${params.toString()}`, {
+      headers: getAuthHeaders()
+    });
     return handleResponse<TelemetryRecord[]>(res);
   },
 
   async getSimulatorStatus(): Promise<SimulatorStatus> {
-    const res = await fetch(`${getApiBase()}/telemetry/simulator/status`);
+    const res = await fetch(`${getApiBase()}/telemetry/simulator/status`, {
+      headers: getAuthHeaders()
+    });
     return handleResponse<SimulatorStatus>(res);
   },
 
   async toggleSimulator(enable: boolean, vin?: string, intervalSeconds: number = 3): Promise<SimulatorStatus> {
     const res = await fetch(`${getApiBase()}/telemetry/simulator/toggle`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ enable, vin, intervalSeconds })
     });
     return handleResponse<SimulatorStatus>(res);
@@ -124,16 +182,16 @@ export const teslaApi = {
   ): Promise<VehicleCommandResult> {
     const res = await fetch(`${getApiBase()}/vehicles/${idOrVin}/command`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ command, parameters, confirmedByUser })
     });
     return handleResponse<VehicleCommandResult>(res);
   },
 
   async getVehicleAuditLogs(idOrVin: string | number, limit: number = 50): Promise<CommandAuditLog[]> {
-    const res = await fetch(`${getApiBase()}/vehicles/${idOrVin}/commands/audit-logs?limit=${limit}`);
+    const res = await fetch(`${getApiBase()}/vehicles/${idOrVin}/commands/audit-logs?limit=${limit}`, {
+      headers: getAuthHeaders()
+    });
     return handleResponse<CommandAuditLog[]>(res);
   },
-
 };
-
