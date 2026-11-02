@@ -131,12 +131,20 @@ export const App: React.FC = () => {
     try {
       showToast('Signing out of Tesla account...');
       await teslaApi.disconnect();
-      setStatus(null);
+      setStatus({
+        isConnected: false,
+        email: null,
+        scopes: null,
+        tokenExpiresAtUtc: null,
+        expiresInMinutes: null,
+        isMockMode: false,
+        region: '',
+        statusMessage: 'Signed out successfully. Authentication required.'
+      });
       setVehicles([]);
       setSelectedVehicle(null);
       setVehicleData(null);
       showToast('Signed out successfully. Session invalidated.');
-      await loadFleetData();
     } catch (err: any) {
       showToast(`Sign out failed: ${err.message}`);
     }
